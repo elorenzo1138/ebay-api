@@ -1,12 +1,12 @@
 $:.unshift File.join(File.dirname(__FILE__), 'lib')
 require 'rubygems'
+require 'rubygems/package_task'
+require 'rdoc/task'
 require 'rake'
 require 'rake/testtask'
-require 'rake/rdoctask'
-require 'rake/gempackagetask'
 require 'rake/contrib/rubyforgepublisher'
 
-PKG_VERSION = "0.12.0"
+PKG_VERSION = "0.12.1"
 PKG_NAME = "ebayapi"
 PKG_FILE_NAME = "#{PKG_NAME}-#{PKG_VERSION}"
 
@@ -23,14 +23,14 @@ namespace :test do
   desc 'Run all unit tests.'
   Rake::TestTask.new(:units) do |t|
     t.libs << "test"
-  	t.pattern = 'test/unit/**/*_test.rb'
+    t.pattern = 'test/unit/**/*_test.rb'
     t.verbose = true
   end
   
   desc 'Run all unit tests.'
   Rake::TestTask.new(:mapping) do |t|
     t.libs << "test"
-  	t.pattern = 'test/mapping/**/*_test.rb'
+    t.pattern = 'test/mapping/**/*_test.rb'
     t.verbose = true
   end
 end
@@ -56,17 +56,17 @@ namespace :schema do
   task :update_version do
     schema = File.dirname(__FILE__) + '/lib/ebay/schema/ebaySvc.xsd'
     # Update the schema version string
-    version = File.open(schema) do |f|
-      version_string = f.gets
-      version_string.match(/Version (\d+)/)
-      $1
-    end
-
-    version_file_path = File.dirname(__FILE__) + "/lib/ebay/schema/version.rb"
-    version_file = File.read(version_file_path)
-    version_file.gsub!(/VERSION = \d+/, "VERSION = #{version}")
-    File.open(version_file_path, 'w') do |f|
-      f.puts version_file
+    
+    File.read(schema) =~ /Version (\d+)/m
+    if version = $1
+      version_file_path = File.dirname(__FILE__) + "/lib/ebay/schema/version.rb"
+      version_file = File.read(version_file_path)
+      version_file.gsub!(/VERSION = \d+/, "VERSION = #{version}")
+      File.open(version_file_path, 'w') do |f|
+        f.puts version_file
+      end
+    else
+      raise "Unable to parse the version from the schema"
     end
   end
   
@@ -107,6 +107,7 @@ Rake::RDocTask.new { |rdoc|
 spec = Gem::Specification.new do |s|
   s.name = PKG_NAME
   s.version = PKG_VERSION
+  s.platform = Gem::Platform::RUBY
   s.summary = "Ruby client for the eBay unified schema XML API"
   s.has_rdoc = true
   s.files = PKG_FILES
@@ -118,10 +119,17 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('money', '= 1.7.1')
 end
 
-Rake::GemPackageTask.new(spec) do |p|
+Gem::PackageTask.new(spec) do |p|
   p.gem_spec = spec
   p.need_tar = true
   p.need_zip = true
+end
+
+desc "Generate gemspec"
+task :gemspec do
+  File.open("#{PKG_NAME}.gemspec", "w+") do |f|
+    f.print spec.to_ruby
+  end
 end
 
 desc "Release the gems and docs to RubyForge"
