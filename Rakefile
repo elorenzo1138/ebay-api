@@ -115,7 +115,7 @@ spec = Gem::Specification.new do |s|
   s.author = "Cody Fauser"
   s.email = "codyfauser@gmail.com"
   s.homepage = "http://ebayapi.rubyforge.org"
-  s.add_dependency('xml-mapping', '>= 0.8.1')
+  s.add_dependency('xml-mapping', '~> 0.8.0')
   s.add_dependency('money', '= 1.7.1')
 end
 
