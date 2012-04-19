@@ -52,6 +52,27 @@ class EbayTest < Test::Unit::TestCase
       @ebay.get_ebay_official_time
     end 
   end
+
+  def test_raise_on_server_error
+    Ebay::HttpMock.respond_with(Ebay::Response.new("FOO", 502))
+    
+    ebay = Api.new(:auth_token => "TEST")
+    err = assert_raise(Ebay::ServerError) do
+      ebay.get_ebay_official_time
+    end
+    assert_equal("/ws/api.dll", err.request_path)
+    assert_equal("<?xml version='1.0' encoding='UTF-8'?><GeteBayOfficialTimeRequest xmlns='urn:ebay:apis:eBLBaseComponents'><RequesterCredentials><eBayAuthToken>TEST</eBayAuthToken></RequesterCredentials></GeteBayOfficialTimeRequest>", err.request_body)
+    assert_equal( { "Content-Type"=>"text/xml",
+                    "X-EBAY-API-APP-NAME"=>"CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+                    "X-EBAY-API-COMPATIBILITY-LEVEL"=>"607",
+                    "X-EBAY-API-DEV-NAME"=>"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                    "X-EBAY-API-CERT-NAME"=>"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+                    "X-EBAY-API-SITEID"=>"0",
+                    "X-EBAY-API-CALL-NAME"=>"GeteBayOfficialTime",
+                    "X-EBAY-API-SESSION-CERTIFICATE"=>"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC;DDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+                    "Accept-Encoding"=>"gzip" },
+                  err.request_headers )
+  end
   
   def test_retries_2x_on_error
     Ebay::HttpMock.respond_with(@failure, @failure, @success)
