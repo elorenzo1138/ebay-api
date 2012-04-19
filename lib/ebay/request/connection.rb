@@ -6,9 +6,15 @@ require 'logger'
 
 module Ebay #:nodoc:
   class ConnectionError < StandardError #:nodoc:
+    attr_reader :request_path
+    attr_reader :request_body
+    attr_reader :request_headers
     attr_reader :response
 
-    def initialize(response, message = nil)
+    def initialize(request_path, request_body, request_headers, response, message = nil)
+      @request_path = request_path
+      @request_body = request_body
+      @request_headers = request_headers
       @response = response
       @message  = message
     end
@@ -67,20 +73,20 @@ module Ebay #:nodoc:
     end
 
     private
-    def request(method, *arguments)
-      response = http.send(method, *arguments)
+    def request(method, path, body, headers)
+      response = http.send(method, path, body, headers)
 
       case response.code.to_i
       when 200...300
         response
       when 404
-        raise(ResourceNotFound.new(response))
+        raise(ResourceNotFound.new(path, body, headers, response))
       when 400...500
-        raise(ClientError.new(response))
+        raise(ClientError.new(path, body, headers, response))
       when 500...600
-        raise(ServerError.new(response))
+        raise(ServerError.new(path, body, headers, response))
       else
-        raise(ConnectionError.new(response, "Unknown response code: #{response.code}"))
+        raise(ConnectionError.new(path, body, headers, response, "Unknown response code: #{response.code}"))
       end
     end
 
