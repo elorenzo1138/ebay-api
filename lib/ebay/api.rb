@@ -118,7 +118,7 @@ module Ebay #:nodoc:
     end
   
     private
-    def commit(request_class, params)
+    def commit(request_class, params, response_class)
       format = params.delete(:format) || @format
       
       params[:username] = username
@@ -128,10 +128,10 @@ module Ebay #:nodoc:
       request = request_class.new(params)
       yield request if block_given?
       @retries = 0
-      invoke(request, format)
+      invoke(request, format, response_class)
     end
     
-    def invoke(request, format)
+    def invoke(request, format, response_class)
       response = connection.post( service_uri.path, 
                                   build_body(request), 
                                   build_headers(request.call_name)
@@ -143,10 +143,10 @@ module Ebay #:nodoc:
         connection.logger.debug(response)
       end
       result = begin
-        parse(response, format)
+        parse(response_class, response, format)
       rescue RequestError => e
         raise_error_or_retry( e ) do
-          invoke( request, format )
+          invoke(request, format, response_class)
         end
       end
       @retries = 0
@@ -229,7 +229,7 @@ module Ebay #:nodoc:
       end
     end
 
-    def parse(content, format)
+    def parse(response_class, content, format)
       case format
       when :object
         xml = REXML::Document.new(content)

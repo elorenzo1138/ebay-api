@@ -14,7 +14,7 @@ module Ebay # :nodoc:
     #  numeric_node :vat_percent, 'VATPercent', :optional => true
     #  text_node :title, 'Title', :optional => true
     class AccountEntry
-      include XML::Mapping
+      include HappymapperTranslation
       include Initializer
       root_element_name 'AccountEntry'
       text_node :account_details_entry_type, 'AccountDetailsEntryType', :optional => true
